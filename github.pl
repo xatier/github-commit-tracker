@@ -7,6 +7,16 @@ use JSON;
 
 # put OAuth key into key.pm
 use key;
+=key.pm
+
+key.pm should be like this:
+
+package key;
+# https://github.com/settings/applications
+# Personal Access Tokens
+our $oauth_key = "";
+
+=cut
 
 
 # api call helper
