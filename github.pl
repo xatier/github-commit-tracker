@@ -5,10 +5,15 @@ use utf8;
 use Data::Dumper;
 use JSON;
 
+# put OAuth key into key.pm
+use key;
+
+
 # api call helper
 sub api_call {
     my $api = shift;
-    from_json(`wget https://api.github.com/$api -O - 2>/dev/null`);
+    #say "calling https://api.github.com/$api";
+    from_json(`wget https://api.github.com/$api?per_page=100 --header \"Authorization: token $key::oauth_key\" -O - 2>/dev/null`);
 }
 
 
@@ -53,10 +58,11 @@ sub get_weekly_commit_count {
     my $repo = shift;
     my $json = api_call("repos/$repo/stats/participation");
     my @count = ();
-    for (@{ $json->{owner} }) {
+    for (@{ $json->{all} }) {
         push @count, $_;
     }
-    @count;
+    #@count = ;
+    @count[-10 .. -1];
 }
 
 
@@ -73,3 +79,18 @@ for (get_code_freqency("xatier/cs_note")) {
 }
 get_weekly_commit_count("tim37021/rtenv");
 =cut
+
+print "getting fork repo list...";
+my @forks = get_fork_repo();
+say "done.\n" . scalar @forks . " repos:";
+say join "\n", @forks;
+
+for my $repo (@forks) {
+    my @count = get_weekly_commit_count($repo);
+    my $count = $count[-1];
+    printf "%35s", "$repo : $count / ";
+    say join " ", @count;
+
+    # sleep 0.25 sec
+    select undef, undef, undef, 0.25;
+}
