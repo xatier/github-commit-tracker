@@ -75,20 +75,51 @@ sub get_weekly_commit_count {
     @count[-10 .. -1];
 }
 
+open PG, ">", "page1.html";
 
-=tests
-my @tim_s_log = get_git_log("tim37021/rtenv");
-for (@tim_s_log) {
-    say $_->[0];
-    say $_->[1];
-    say $_->[2];
-    say "------"x3;
+say PG <<END;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0-wip/css/bootstrap.min.css">
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.10.8/jquery.tablesorter.min.js"></script>
+
+<script>
+\$(document).ready(function()
+    {
+        \$("#myTable").tablesorter();
+    }
+);
+
+</script>
+</head>
+<body>
+<div class="container">
+      <h1 id="">xatier's github commit log reporter</h1>
+
+<table id="myTable" class="table table-striped table-bordered tablesorter">
+<thead>
+<tr>
+    <th>repo</th>
+
+
+END
+
+# timestamp
+my $last_ts = (api_call("repos/embedded2013/rtenv/stats/code_frequency"))->[-1][0];
+
+for (reverse 0..4) {
+    say PG "<th> " . scalar localtime ($last_ts - 604800*$_) . "</th>";
 }
-for (get_code_freqency("xatier/cs_note")) {
-    say $_->[0];
-}
-get_weekly_commit_count("tim37021/rtenv");
-=cut
+
+say PG <<END;
+</tr>
+</thead>
+<tbody>
+END
+
+exit 0;
 
 print "getting fork repo list...";
 my @forks = get_fork_repo();
@@ -101,6 +132,8 @@ for my $repo (@forks) {
     printf "%35s", "$repo : $count / ";
     say join " ", @count;
 
-    # sleep 0.25 sec
-    select undef, undef, undef, 0.25;
+    # sleep 0.5 sec
+    select undef, undef, undef, 0.5;
 }
+
+say "</tbody></table> </div></body></html>";
