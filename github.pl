@@ -75,7 +75,7 @@ sub get_weekly_commit_count {
     @count[-5 .. -1];
 }
 
-open PG, ">", "page1.html";
+open PG, ">", "page.html";
 
 say PG <<END;
 <!DOCTYPE html>
