@@ -72,7 +72,7 @@ sub get_weekly_commit_count {
         push @count, $_;
     }
     #@count = ;
-    @count[-10 .. -1];
+    @count[-5 .. -1];
 }
 
 open PG, ">", "page1.html";
@@ -96,14 +96,12 @@ say PG <<END;
 </head>
 <body>
 <div class="container">
-      <h1 id="">xatier's github commit log reporter</h1>
+      <h1 id="">xatier's github commit ranking reporter</h1>
 
 <table id="myTable" class="table table-striped table-bordered tablesorter">
 <thead>
 <tr>
     <th>repo</th>
-
-
 END
 
 # timestamp
@@ -119,21 +117,40 @@ say PG <<END;
 <tbody>
 END
 
-exit 0;
 
+# XXX: should be a BFS here, to get 'fork from forked repos'
 print "getting fork repo list...";
 my @forks = get_fork_repo();
 say "done.\n" . scalar @forks . " repos:";
 say join "\n", @forks;
 
+
+
+
+# get commit count here
 for my $repo (@forks) {
     my @count = get_weekly_commit_count($repo);
-    my $count = $count[-1];
-    printf "%35s", "$repo : $count / ";
+
+    # if something get error, f*cking github apis!
+    if (not defined $count[3]) {
+        # can't get commit count, sleep
+        say "can't get commit count, sleep one second!";
+        sleep 1;
+        redo;
+    }
+
+    printf "%35s", "$repo / ";
     say join " ", @count;
+
+
+    print PG "<tr><td><a href=\"https://github.com/$repo\" target=\"_blank\">";
+    print PG "$repo</a></td>";
+    print PG "<td>$_</td>" for (@count);
+    say PG "</tr>";
+
 
     # sleep 0.5 sec
     select undef, undef, undef, 0.5;
 }
 
-say "</tbody></table> </div></body></html>";
+say PG "</tbody></table> </div></body></html>";
