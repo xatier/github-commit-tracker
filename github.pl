@@ -19,7 +19,10 @@ our $oauth_key = "";
 =cut
 
 my $origin = "embedded2013/rtenv";
-#my $origin = "embedded2013/freertos";
+my $origin = "embedded2013/freertos";
+
+#report_gen($origin);
+reviewer("school510587/freertos");
 
 
 # api call helper
@@ -96,13 +99,14 @@ sub get_weekly_commit_count {
     @count[-5 .. -1];
 }
 
+sub report_gen {
+    my $origin = shift;
+    # create pagename: owner-repo.html
+    (my $page_name = $origin) =~ s/\//-/;
+    open PG, ">", "$page_name.html";
 
-# create pagename: owner-repo.html
-(my $page_name = $origin) =~ s/\//-/;
-open PG, ">", "$page_name.html";
 
-
-say PG <<END;
+    say PG <<END;
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -134,69 +138,118 @@ say PG <<END;
     <th>repo</th>
 END
 
-# timestamp
-my $last_ts = (api_call("repos/$origin/stats/code_frequency"))->[-1][0];
+    # timestamp
+    my $last_ts = (api_call("repos/$origin/stats/code_frequency"))->[-1][0];
 
-for (reverse 0..4) {
-    say PG "<th> " . scalar localtime ($last_ts - 604800*$_) . "</th>";
-}
+    for (reverse 0..4) {
+        say PG "<th> " . scalar localtime ($last_ts - 604800*$_) . "</th>";
+    }
 
-say PG <<END;
-</tr>
-</thead>
-<tbody>
+    say PG <<END;
+    </tr>
+    </thead>
+    <tbody>
 END
 
 
-# get 'fork from forked repos'
-print "getting fork repo list...";
-my @forks = get_fork_repo();
-say "done.\n" . scalar @forks . " repos:";
-say join "\n", @forks;
+    # get 'fork from forked repos'
+    print "getting fork repo list...";
+    my @forks = get_fork_repo();
+    say "done.\n" . scalar @forks . " repos:";
+    say join "\n", @forks;
 
 
 
-my @td = ();
+    my @td = ();
 
-# get commit count here
-for my $repo (@forks) {
-    my @count = get_weekly_commit_count($repo);
+    # get commit count here
+    for my $repo (@forks) {
 
-    # if something get error, f*cking github apis!
-    if (not defined $count[3]) {
-        # can't get commit count, sleep
-        say "can't get commit count, sleep one second!";
-        sleep 1;
-        redo;
+        reviewer($repo);
+
+        my @count = get_weekly_commit_count($repo);
+
+        # if something get error, f*cking github apis!
+        if (not defined $count[3]) {
+            # can't get commit count, sleep
+            say "can't get commit count, sleep one second!";
+            sleep 1;
+            redo;
+        }
+
+        printf "%35s", "$repo / ";
+        say join " ", @count;
+
+        push @td, [$repo, @count];
+
+        # sleep 0.5 sec
+        select undef, undef, undef, 0.5;
     }
 
-    printf "%35s", "$repo / ";
-    say join " ", @count;
 
-    push @td, [$repo, @count];
-
-    # sleep 0.5 sec
-    select undef, undef, undef, 0.5;
-}
-
-
-# sort the commit report according to the latest logs
-@td = sort {$b->[5] <=> $a->[5] or
-            $b->[4] <=> $a->[4] or
-            $b->[3] <=> $a->[3] or
-            $b->[2] <=> $a->[2] or
-            $b->[1] <=> $a->[1] or
-            $b->[0] cmp $a-[0]
-} @td;
+    # sort the commit report according to the latest logs
+    @td = sort {$b->[5] <=> $a->[5] or
+                $b->[4] <=> $a->[4] or
+                $b->[3] <=> $a->[3] or
+                $b->[2] <=> $a->[2] or
+                $b->[1] <=> $a->[1] or
+                $b->[0] cmp $a-[0]
+    } @td;
 
 
-for my $repo (@td) {
+    for my $repo (@td) {
 
-    print PG "<tr><td><a href=\"https://github.com/$repo->[0]\" target=\"_blank\">";
-    print PG "$repo->[0]</a></td>";
-    print PG "<td>$repo->[$_]</td>" for (1..5);
-    say PG "</tr>";
+        print PG "<tr><td><a href=\"https://github.com/$repo->[0]\" target=\"_blank\">";
+        print PG "$repo->[0]</a></td>";
+        print PG "<td>$repo->[$_]</td>" for (1..5);
+        say PG "</tr>";
+
+    }
+
+    say PG "</tbody></table> </div></body></html>";
 
 }
 
-say PG "</tbody></table> </div></body></html>";
+
+sub reviewer {
+    my $repo = shift;
+    # create pagename: owner-repo.html
+    (my $page_name = $repo) =~ s/\//-/;
+    open PG, ">", "$page_name.html";
+
+    say "generating reviewer of $repo ...";
+    sleep 1;
+    my $json = api_call("repos/$repo/comments");
+
+
+    say PG <<END;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0-wip/css/bootstrap.min.css">
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+</head>
+<body>
+<div class="container">
+      <h1 id="">xatier's github commit comments reviewer</h1>
+      <h3>Original repo:
+      <a href=\"https://github.com/$repo\" target=\"_blank\">$repo</a>
+      </h3>
+
+      <hr>
+END
+
+    # reserve order is better for reviewing I think
+    for (reverse @$json) {
+        say PG <<END;
+    <p>
+      <h3>$_->{user}{login} @
+        <a href=\"$_->{html_url}\" target=\"_blank\"> $_->{updated_at}</a>
+      </h3>
+      <pre>$_->{body}</pre>
+    </p>
+    <hr>
+END
+    }
+    say PG "</body></html>";
+}
