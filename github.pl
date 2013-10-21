@@ -19,10 +19,8 @@ our $oauth_key = "";
 =cut
 
 my $origin = "embedded2013/rtenv";
-my $origin = "embedded2013/freertos";
-
-#report_gen($origin);
-reviewer("school510587/freertos");
+#my $origin = "embedded2013/freertos";
+report_gen($origin);
 
 
 # api call helper
@@ -183,7 +181,7 @@ END
         push @td, [$repo, @count];
 
         # sleep 0.5 sec
-        select undef, undef, undef, 0.5;
+        select undef, undef, undef, 1;
     }
 
 
@@ -208,6 +206,8 @@ END
 
     say PG "</tbody></table> </div></body></html>";
 
+    close PG;
+
 }
 
 
@@ -215,14 +215,14 @@ sub reviewer {
     my $repo = shift;
     # create pagename: owner-repo.html
     (my $page_name = $repo) =~ s/\//-/;
-    open PG, ">", "$page_name.html";
+    open PG_, ">", "$page_name.html";
 
     say "generating reviewer of $repo ...";
     sleep 1;
     my $json = api_call("repos/$repo/comments");
 
 
-    say PG <<END;
+    say PG_ <<END;
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -241,7 +241,7 @@ END
 
     # reserve order is better for reviewing I think
     for (reverse @$json) {
-        say PG <<END;
+        say PG_ <<END;
     <p>
       <h3>$_->{user}{login} @
         <a href=\"$_->{html_url}\" target=\"_blank\"> $_->{updated_at}</a>
@@ -251,5 +251,7 @@ END
     <hr>
 END
     }
-    say PG "</body></html>";
+    say PG_ "</body></html>";
+
+    close PG_;
 }
