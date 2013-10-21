@@ -18,6 +18,9 @@ our $oauth_key = "";
 
 =cut
 
+my $origin = "embedded2013/rtenv";
+my $origin = "embedded2013/freertos";
+
 
 # api call helper
 sub api_call {
@@ -27,9 +30,9 @@ sub api_call {
 }
 
 
-# all repos forked from embedded2013/rtenv
+# all repos forked from $origin
 sub get_fork_repo {
-    my $json = api_call("repos/embedded2013/rtenv/forks");
+    my $json = api_call("repos/$origin/forks");
     my @forks = ();
     for (@$json) {
         push @forks, $_->{full_name};
@@ -75,7 +78,11 @@ sub get_weekly_commit_count {
     @count[-5 .. -1];
 }
 
-open PG, ">", "page.html";
+
+# create pagename: owner-repo.html
+(my $page_name = $origin) =~ s/\//-/;
+open PG, ">", "$page_name.html";
+
 
 say PG <<END;
 <!DOCTYPE html>
@@ -97,6 +104,11 @@ say PG <<END;
 <body>
 <div class="container">
       <h1 id="">xatier's github commit ranking reporter</h1>
+      <h2>Original repo:
+      <a href=\"https://github.com/$origin\" target=\"_blank\">$origin</a>
+      </h2>
+
+      <hr>
 
 <table id="myTable" class="table table-striped table-bordered tablesorter">
 <thead>
@@ -105,7 +117,7 @@ say PG <<END;
 END
 
 # timestamp
-my $last_ts = (api_call("repos/embedded2013/rtenv/stats/code_frequency"))->[-1][0];
+my $last_ts = (api_call("repos/$origin/stats/code_frequency"))->[-1][0];
 
 for (reverse 0..4) {
     say PG "<th> " . scalar localtime ($last_ts - 604800*$_) . "</th>";
