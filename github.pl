@@ -19,7 +19,7 @@ our $oauth_key = "";
 =cut
 
 my $origin = "embedded2013/rtenv";
-my $origin = "embedded2013/freertos";
+#my $origin = "embedded2013/freertos";
 
 
 # api call helper
@@ -37,6 +37,24 @@ sub get_fork_repo {
     for (@$json) {
         push @forks, $_->{full_name};
     }
+
+# DFS all repos forked from the original one
+again:
+    my @append = ();
+    for (@forks) {
+        $json = api_call("repos/$_/forks");
+        for (@$json) {
+            if (not $_->{full_name} ~~ @forks) {
+                push @append, $_->{full_name};
+            }
+        }
+    }
+
+    if (@append > 0) {
+        push @forks, @append;
+        goto again;
+    }
+
     @forks;
 }
 
@@ -130,7 +148,7 @@ say PG <<END;
 END
 
 
-# XXX: should be a BFS here, to get 'fork from forked repos'
+# get 'fork from forked repos'
 print "getting fork repo list...";
 my @forks = get_fork_repo();
 say "done.\n" . scalar @forks . " repos:";
