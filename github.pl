@@ -126,6 +126,7 @@ say join "\n", @forks;
 
 
 
+my @td = ();
 
 # get commit count here
 for my $repo (@forks) {
@@ -142,15 +143,30 @@ for my $repo (@forks) {
     printf "%35s", "$repo / ";
     say join " ", @count;
 
-
-    print PG "<tr><td><a href=\"https://github.com/$repo\" target=\"_blank\">";
-    print PG "$repo</a></td>";
-    print PG "<td>$_</td>" for (@count);
-    say PG "</tr>";
-
+    push @td, [$repo, @count];
 
     # sleep 0.5 sec
     select undef, undef, undef, 0.5;
+}
+
+
+# sort the commit report according to the latest logs
+@td = sort {$b->[5] <=> $a->[5] or
+            $b->[4] <=> $a->[4] or
+            $b->[3] <=> $a->[3] or
+            $b->[2] <=> $a->[2] or
+            $b->[1] <=> $a->[1] or
+            $b->[0] cmp $a-[0]
+} @td;
+
+
+for my $repo (@td) {
+
+    print PG "<tr><td><a href=\"https://github.com/$repo->[0]\" target=\"_blank\">";
+    print PG "$repo->[0]</a></td>";
+    print PG "<td>$repo->[$_]</td>" for (1..5);
+    say PG "</tr>";
+
 }
 
 say PG "</tbody></table> </div></body></html>";
