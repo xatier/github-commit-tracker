@@ -1,2 +1,4 @@
 # github API OAuth key
 key.pm
+rtenv/*
+freertos/*
