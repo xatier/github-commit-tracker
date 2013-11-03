@@ -206,11 +206,11 @@ END
 
 
     # sort the commit report according to the latest logs
-    @td = sort {$b->[5] <=> $a->[5] or
-                $b->[4] <=> $a->[4] or
-                $b->[3] <=> $a->[3] or
-                $b->[2] <=> $a->[2] or
-                $b->[1] <=> $a->[1] or
+    @td = sort {$b->[-1] <=> $a->[-1] or
+                $b->[-2] <=> $a->[-2] or
+                $b->[-3] <=> $a->[-3] or
+                $b->[-4] <=> $a->[-4] or
+                $b->[-5] <=> $a->[-5] or
                 $b->[0] cmp $a-[0]
     } @td;
 
