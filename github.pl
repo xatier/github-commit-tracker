@@ -4,6 +4,7 @@ use 5.012;
 use utf8;
 use Data::Dumper;
 use JSON;
+use Time::Piece;
 
 # put OAuth key into key.pm
 use key;
@@ -20,14 +21,30 @@ our $oauth_key = "";
 
 my $origin = "embedded2013/rtenv";
 #my $origin = "embedded2013/freertos";
-report_gen($origin);
 
+my $create_time = (get_git_log($origin))[0][1];
+
+my $lcltime = localtime;
+my $week_count_max = 0;
+for (1..1000000) {
+    $week_count_max++;
+    last if (($lcltime - $_*604800)->datetime lt $create_time);
+}
+
+say "in $week_count_max weeks since $create_time";
+report_gen($origin);
 
 # api call helper
 sub api_call {
     my $api = shift;
     #say "calling https://api.github.com/$api";
-    from_json(`wget https://api.github.com/$api?per_page=100 --header \"Authorization: token $key::oauth_key\" -O - 2>/dev/null`);
+    my $ret;
+    select undef, undef, undef, 0.1;   # sleep a while before calling some APIs
+    eval {
+        $ret = from_json(`wget https://api.github.com/$api?per_page=100 --header \"Authorization: token $key::oauth_key\" -O - 2>/dev/null`);
+    };
+    say $@ if $@;       # catch errors :(
+    $ret;
 }
 
 
@@ -43,6 +60,7 @@ sub get_fork_repo {
 again:
     my @append = ();
     for (@forks) {
+        say "DFS on $_";
         $json = api_call("repos/$_/forks");
         for (@$json) {
             if (not $_->{full_name} ~~ @forks) {
@@ -50,6 +68,8 @@ again:
             }
         }
     }
+
+    say "found " . scalar @append . " more repos";
 
     if (@append > 0) {
         push @forks, @append;
@@ -94,7 +114,7 @@ sub get_weekly_commit_count {
         push @count, $_;
     }
     #@count = ;
-    @count[-5 .. -1];
+    @count[-($week_count_max+1) .. -1];
 }
 
 sub report_gen {
@@ -139,7 +159,7 @@ END
     # timestamp
     my $last_ts = (api_call("repos/$origin/stats/code_frequency"))->[-1][0];
 
-    for (reverse 0..4) {
+    for (reverse 0..$week_count_max) {
         say PG "<th> " . scalar localtime ($last_ts - 604800*$_) . "</th>";
     }
 
@@ -168,7 +188,7 @@ END
         my @count = get_weekly_commit_count($repo);
 
         # if something get error, f*cking github apis!
-        if (not defined $count[3]) {
+        if (not defined $count[0]) {
             # can't get commit count, sleep
             say "can't get commit count, sleep one second!";
             sleep 1;
@@ -199,7 +219,7 @@ END
 
         print PG "<tr><td><a href=\"https://github.com/$repo->[0]\" target=\"_blank\">";
         print PG "$repo->[0]</a></td>";
-        print PG "<td>$repo->[$_]</td>" for (1..5);
+        print PG "<td>$repo->[$_]</td>" for (1..($week_count_max+1));
         say PG "</tr>";
 
     }
