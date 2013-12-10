@@ -39,11 +39,23 @@ sub api_call {
     my $api = shift;
     #say "calling https://api.github.com/$api";
     my $ret;
+
+ retry:
     select undef, undef, undef, 0.1;   # sleep a while before calling some APIs
     eval {
         $ret = from_json(`wget https://api.github.com/$api?per_page=100 --header \"Authorization: token $key::oauth_key\" -O - 2>/dev/null`);
     };
-    say $@ if $@;       # catch errors :(
+    if ($@) {       # catch errors :(
+        say "API call error!, sleep one second!";
+        say ">>>    $@";
+        sleep 1;
+        goto retry;
+    }
+    if (ref $ret eq "HASH" && not %$ret) {
+        say "get empty hash!";
+        sleep 1;
+        goto retry;
+    }
     $ret;
 }
 
@@ -56,11 +68,11 @@ sub get_fork_repo {
         push @forks, $_->{full_name};
     }
 
-# DFS all repos forked from the original one
+# BFS all repos forked from the original one
 again:
     my @append = ();
     for (@forks) {
-        say "DFS on $_";
+        say "BFS on $_";
         $json = api_call("repos/$_/forks");
         for (@$json) {
             if (not $_->{full_name} ~~ @forks) {
@@ -108,12 +120,19 @@ sub get_code_freqency {
 
 sub get_weekly_commit_count {
     my $repo = shift;
+retry:
     my $json = api_call("repos/$repo/stats/participation");
     my @count = ();
     for (@{ $json->{all} }) {
         push @count, $_;
     }
-    #@count = ;
+    if (not defined $count[0]) {
+        #can't get commit count, sleep
+        say "can't get commit count, sleep one second!";
+        sleep 1;
+        goto retry;
+
+    }
     @count[-($week_count_max+1) .. -1];
 }
 
@@ -188,11 +207,12 @@ END
         my @count = get_weekly_commit_count($repo);
 
         # if something get error, f*cking github apis!
+        # XXX: shouldn't happend now
         if (not defined $count[0]) {
             # can't get commit count, sleep
-            say "can't get commit count, sleep one second!";
-            sleep 1;
-            redo;
+            say "X: can't get commit count, sleep one second!";
+            #sleep 1;
+            #redo;
         }
 
         printf "%35s", "$repo / ";
