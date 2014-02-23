@@ -19,8 +19,10 @@ our $oauth_key = "";
 
 =cut
 
-my $origin = "embedded2013/rtenv";
+#my $origin = "embedded2013/rtenv";
 #my $origin = "embedded2013/freertos";
+my $origin = "embedded2014/rtenv";
+my $repo_dir = "rtenv";
 
 my $create_time = (get_git_log($origin))[0][1];
 
@@ -236,9 +238,13 @@ END
 
 
     for my $repo (@td) {
+        # link to reviewer pagename: owner-repo.html
+        (my $page_name = $repo->[0]) =~ s/\//-/;
+        $page_name .= ".html";
 
         print PG "<tr><td><a href=\"https://github.com/$repo->[0]\" target=\"_blank\">";
-        print PG "$repo->[0]</a></td>";
+        print PG "$repo->[0]</a> ->  ";
+        print PG "<a href=\"http://cs5566.nctucs.net/$repo_dir/$page_name\" target=\"_blank\">review</a></td>";
         print PG "<td>$repo->[$_]</td>" for (1..($week_count_max+1));
         say PG "</tr>";
 
