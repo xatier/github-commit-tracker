@@ -1,4 +1,5 @@
 # github API OAuth key
 key.pm
+key.py
 rtenv/*
 freertos/*
