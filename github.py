@@ -28,7 +28,7 @@ debug_mode = False
 
 # Ref: https://stackoverflow.com/posts/969324/revisions
 def isotime2datetime(t):
-    return datetime.datetime.strptime(t[:-1], "%Y-%m-%dT%H:%M:%S" )
+    return datetime.datetime.strptime(t[:-1], "%Y-%m-%dT%H:%M:%S")
 
 
 def api_call(api):
@@ -57,7 +57,6 @@ def get_fork_repo(origin):
     all repos forked from origin, BFS the fork tree
     """
 
-    done = False
     forked_repos = []
     search_list = [ origin ]
 
@@ -70,7 +69,6 @@ def get_fork_repo(origin):
             time.sleep(0.01)
         else:
             if debug_mode: print('[-] no forked repo found')
-
 
     # sort the result, case-insensitively
     return sorted(forked_repos, key=lambda s: s.lower())
@@ -127,7 +125,7 @@ class Student(object):
         self.repo = repo
         self.commit_log = get_commit_log(self.repo)
         self.comments = get_comments(self.repo)
-        #self.code_frequency = get_code_freqency(self.repo)
+        # self.code_frequency = get_code_freqency(self.repo)
 
 
 def print_with_commits(stu_l):
@@ -137,11 +135,10 @@ def print_with_commits(stu_l):
 
 def print_with_comments(stu_l):
     for stu in stu_l:
-        print("{:50}: {} comments(s)".format(stu['repo'], len(stu['comments'])))
+        print("{:50}: {} comment(s)".format(stu['repo'], len(stu['comments'])))
 
 
-
-
+# main
 if __name__ == '__main__':
 
     # play with arguments, all are required
@@ -153,7 +150,6 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--end", action="store", required=True,
                         help="the end of the assignment, E.g. 2015-3-1T00:00:00")
     args = parser.parse_args()
-
 
     # arguments checking
     m = re.search('(\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2})', args.start)
@@ -177,32 +173,28 @@ if __name__ == '__main__':
         print('[-] invalid repo: {}'.format(args.repo))
         sys.exit(1)
 
-
     if not (start_time and end_time and lecture_repo):
         print('[-] invalid arguments')
         sys.exit(1)
-
 
     # go!
     print('[+] fetching data via Github API ... please wait')
     all_repos = get_fork_repo(lecture_repo)
     all_students = [ Student(repo) for repo in all_repos ]
 
-    print('[+]: {}/{} repo/stu found'.format(len(all_repos), len(all_students)))
-    print('[+] filter commits and comments between {} ~ {}', start_time, end_time)
+    print('[+]: {} repos found'.format(len(all_repos)))
+    print('[+] filter commits and comments between {} ~ {}'.format(start_time, end_time))
     print('\n' + '-'*20 + '\n')
-
 
     # timestamps should be converted to UTC
     start_time = isotime2datetime(start_time) - datetime.timedelta(hours=8)
     end_time = isotime2datetime(end_time) - datetime.timedelta(hours=8)
     three_days_later = start_time + datetime.timedelta(days=3)
 
-
     # filter out with the assignment time interval
     this_assinment = [
         { 'repo' : student.repo,
-          'commits' : [ c for c in student.commit_log \
+          'commits' : [ c for c in student.commit_log
                             if start_time <= c['timestamp'] < end_time]
         } for student in all_students ]
 
