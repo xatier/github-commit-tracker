@@ -3,3 +3,4 @@ key.pm
 key.py
 rtenv/*
 freertos/*
+__pycache__/*
