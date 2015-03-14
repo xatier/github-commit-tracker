@@ -21,6 +21,8 @@ Usage:
 lecture_repo = ''
 start_time = ''
 end_time = ''
+student_list_file = 'student.txt'
+student_list = []
 
 # Debug
 debug_mode = False
@@ -130,16 +132,27 @@ class Student(object):
 
 def print_with_commits(stu_l):
     for stu in stu_l:
-        print("{:50}: {} commit(s)".format(stu['repo'], len(stu['commits'])))
+        print("{:50}: {} commit(s)".format(stu['repo'] + ('(*)' if stu['repo'] in student_list else ''),
+                                             len(stu['commits'])))
 
 
 def print_with_comments(stu_l):
     for stu in stu_l:
-        print("{:50}: {} comment(s)".format(stu['repo'], len(stu['comments'])))
+        print("{:50}: {} comment(s)".format(stu['repo'] + ('(*)' if stu['repo'] in student_list else ''),
+                                              len(stu['comments'])))
 
+def get_student_id_list():
+    repos = []
+    with open(student_list_file) as f:
+        repos = f.readlines()
+        repos = [ line.strip() for line in repos ]
+
+    return repos
 
 # main
 if __name__ == '__main__':
+
+    student_list = get_student_id_list()
 
     # play with arguments, all are required
     parser = argparse.ArgumentParser()
