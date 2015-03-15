@@ -22,3 +22,10 @@ Touch a file called `student.txt` like this:
 *********/arm-lecture
 **********/arm-lecture-1
 ```
+
+## save file
+
+The script will save the student commits data from Github API to `stu.save`,
+
+use `-u` option to update that.
+
