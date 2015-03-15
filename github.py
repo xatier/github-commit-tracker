@@ -4,6 +4,7 @@ import argparse
 import datetime
 import json
 import key
+import pickle
 import re
 import sys
 import time
@@ -13,7 +14,12 @@ import urllib.request
 """
 Usage:
 
+    # load saved data by default
     ./github.py -r 'embedded2015/arm-lecture' -s 2015-3-3T00:00:00 -e 2015-3-14T00:00:00
+
+
+    # update saved data
+    ./github.py -u -r 'embedded2015/arm-lecture' -s 2015-3-3T00:00:00 -e 2015-3-14T00:00:00
 
 """
 
@@ -156,6 +162,8 @@ if __name__ == '__main__':
 
     # play with arguments, all are required
     parser = argparse.ArgumentParser()
+    parser.add_argument("-u", "--update", action="store_true",
+                        help="update saved data")
     parser.add_argument("-r", "--repo", action="store", required=True,
                         help="the repo to be analyzed, E.g. embedded2015/arm-lecture")
     parser.add_argument("-s", "--start", action="store", required=True,
@@ -190,15 +198,25 @@ if __name__ == '__main__':
         print('[-] invalid arguments')
         sys.exit(1)
 
-    # go!
-    print('[+] fetching data via Github API ... please wait')
+    # try to load saved student data
+    if args.update:
+        # go!
+        print('[+] fetching data via Github API ... please wait')
+        all_repos = get_fork_repo(lecture_repo)
+        all_students = [ Student(repo) for repo in all_repos ]
 
-    all_repos = get_fork_repo(lecture_repo)
+    else:
+        print('[+] load saved data, you might need -u option to update')
+        try:
+            all_repos, all_students = pickle.load(open('stu.save', 'rb'))
+        except:
+            print('[-] no saved data found, exit')
+            sys.exit(1)
+
     for stu in student_list:
         if stu not in all_repos:
             print("[+] student repo {} is not in the fork tree".format(stu))
 
-    all_students = [ Student(repo) for repo in all_repos ]
 
 
     print('[+] {} repos found'.format(len(all_repos)))
@@ -265,3 +283,10 @@ if __name__ == '__main__':
     print('all repos sorted by # of comments')
     print_with_comments(this_assinment_comments)
     print('\n' + '-'*20 + '\n')
+
+    # save data
+    try:
+        pickle.dump([all_repos, all_students], open('stu.save', 'wb'))
+    except:
+        print('[-] can\'t save data, exit')
+        sys.exit(1)
