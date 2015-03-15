@@ -192,10 +192,16 @@ if __name__ == '__main__':
 
     # go!
     print('[+] fetching data via Github API ... please wait')
+
     all_repos = get_fork_repo(lecture_repo)
+    for stu in student_list:
+        if stu not in all_repos:
+            print("[+] student repo {} is not in the fork tree".format(stu))
+
     all_students = [ Student(repo) for repo in all_repos ]
 
-    print('[+]: {} repos found'.format(len(all_repos)))
+
+    print('[+] {} repos found'.format(len(all_repos)))
     print('[+] filter commits and comments between {} ~ {}'.format(start_time, end_time))
     print('\n' + '-'*20 + '\n')
 
