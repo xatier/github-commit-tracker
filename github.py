@@ -149,9 +149,13 @@ def print_with_comments(stu_l):
 
 def get_student_id_list():
     repos = []
-    with open(student_list_file) as f:
-        repos = f.readlines()
-        repos = [ line.strip() for line in repos ]
+    try:
+        with open(student_list_file) as f:
+            repos = f.readlines()
+            repos = [ line.strip() for line in repos ]
+    except:
+        # return an empty list here
+        print('can\'t find {}'.format(student_list_file))
 
     return repos
 
