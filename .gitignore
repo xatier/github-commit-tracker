@@ -1,6 +1,8 @@
 # github API OAuth key
 key.pm
 key.py
+student.txt
+stu.save
 rtenv/*
 freertos/*
 __pycache__/*
